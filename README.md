@@ -14,14 +14,23 @@ Projenin temel amacı; verinin yerel dosya sistemine kalıcı olarak yazılıp o
 
 - **Programlama Dili:** C# (.NET 10.0 / Windows Desktop SDK)
 - **Serileştirme:** `System.Text.Json` (UnicodeRanges.All ile Türkçe karakter destekli girintili JSON)
-- **Dosya Giriş / Çıkış (I/O):** `System.IO` (File, StreamWriter, StreamReader, UTF-8 kodlama)
+- **Dosya Giriş / Çıkış (I/O):** `System.IO` (File.ReadAllText / WriteAllText, StreamWriter, UTF-8 kodlama)
 - **Arayüz Çerçevesi:** Windows Forms (WinForms, RichTextBox, ToolStrip, SplitContainer, ListBox, ColorDialog)
+- **Harici NuGet paketi:** Yok
 - **Sürüm Kontrolü:** Git & GitHub
 
 ---
 
 ## 🚀 Kurulum ve Çalıştırma Adımları
 
+### Gereksinimler
+- Windows 10 veya Windows 11
+- [.NET 10 SDK](https://dotnet.microsoft.com/download/dotnet/10.0)
+- Visual Studio 2026 (".NET masaüstü geliştirme" iş yükü) **veya** komut satırı için yalnızca .NET 10 SDK
+
+> Proje `net10.0-windows` hedeflediği için Visual Studio 2022 ile açılamaz.
+
+### Çalıştırma
 1. Projeyi bilgisayarınıza klonlayın veya zip olarak indirin:
    ```bash
    git clone https://github.com/BirgulGokturk/YMH219-NotepadApp.git
@@ -46,11 +55,11 @@ Projenin temel amacı; verinin yerel dosya sistemine kalıcı olarak yazılıp o
 - **Kalıcı JSON Serileştirme:** Notlar `notes.json` dosyasına serileştirilerek kaydedilir; program açıldığında bu dosyadan otomatik geri yüklenir.
 - **Düz Metin (.txt) Dışa Aktarma:** "📄 .txt Olarak Dışa Aktar" butonu ile seçili not, başlık, kategori ve tarih damgalarıyla birlikte metin belgesi olarak kaydedilir.
 - **Tarih Takibi:** Her notun oluşturulma (`CreatedAt`) ve son düzenlenme (`UpdatedAt`) zaman damgaları sistemde tutulur ve arayüzde gösterilir.
-- **Hata Yönetimi ve Kurtarma:** Dosya bulunamadığında veya JSON formatı bozulduğunda uygulama çökmez; otomatik yedekleme alır ve varsayılan yapıyı korur.
+- **Hata Yönetimi ve Kurtarma:** Dosya bulunamadığında veya JSON formatı bozulduğunda uygulama çökmez. Bozuk dosya `notes.json.bak_tarih` adıyla yedeklenir, uygulama örnek notlarla açılır ve kullanıcıya yedeğin yerini gösteren bir uyarı verilir. Not dosyası kilitli olduğu için otomatik kayıt yapılamazsa durum çubuğunda bildirilir.
 
 ### 2. İsteğe Bağlı / Ek Geliştirmeler (Bonus)
-- 🔍 **Canlı Arama ve Kategori Filtreleme:** Arama kutusuna yazıldıkça başlık ve içerikte anlık filtreleme yapılır; açılır kutudan kategoriye (Ders, Kişisel, İş vb.) göre notlar listelenebilir.
-- 💾 **Otomatik Kaydetme (Auto-Save):** Kullanıcı başlığı veya içeriği değiştirdiği anda notlar anında `notes.json` dosyasına yazılır.
+- 🔍 **Canlı Arama ve Kategori Filtreleme:** Arama kutusuna yazıldıkça başlık, içerik ve kategoride anlık filtreleme yapılır; açılır kutudan kategoriye (Ders, Kişisel, İş vb.) göre notlar listelenebilir. Seçilen filtre not kaydedildiğinde korunur.
+- 💾 **Otomatik Kaydetme (Auto-Save):** Kullanıcı başlığı, içeriği, biçimlendirmeyi veya kategoriyi değiştirdiği anda not `notes.json` dosyasına yazılır. "Yeni Not" ile başlanan not, ilk karakter yazıldığında otomatik oluşturulur; başka nota geçmek veya uygulamayı kapatmak yazılanları kaybettirmez.
 - 🏷️ **Kategori Desteği:** Notlara kategori atanabilir, mevcut kategoriler otomatik listelenir.
 - 🎨 **Zengin Metin (RichTextBox) Biçimlendirme:**
   - **K** (Kalın / Bold)
@@ -92,7 +101,8 @@ YMH219-NotepadApp/
 
 ## 📝 Bilinen Sınırlamalar / Geliştirme Notları
 
-- Notlar uygulamanın çalışma dizinindeki `notes.json` dosyasında saklanır.
+- Notlar uygulamanın çalışma dizinindeki (`bin/.../`) `notes.json` dosyasında saklanır; bu klasör silinirse notlar da silinir.
+- Otomatik kayıt her değişiklikte tüm notları dosyaya yeniden yazar; çok sayıda veya çok büyük notta yazarken gecikme olabilir. Gelecekte kaydı son tuştan kısa bir süre sonraya erteleyen bir zamanlayıcı eklenebilir.
 - İlerleyen sürümlerde parola korumalı şifreli notlar ve bulut yedekleme desteği eklenebilir.
 
 ---
