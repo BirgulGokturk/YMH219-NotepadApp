@@ -26,8 +26,17 @@ public partial class Form1 : Form
         }
     }
 
+    /// <summary>
+    /// Kategori listelerini yeniler. Kullanıcının seçtiği filtre ve düzenlenen notun kategorisi
+    /// korunur; önceden her kayıtta filtre "Tümü"ye, not kategorisi ilk kategoriye dönüyordu.
+    /// </summary>
     private void PopulateCategories()
     {
+        bool wasBinding = _isBinding;
+        _isBinding = true;
+
+        string? selectedFilter = cmbCategoryFilter.SelectedItem?.ToString();
+        string noteCategory = cmbNoteCategory.Text;
         var categories = _noteManager.GetCategories();
 
         // Kategori filtresi (Sol)
@@ -37,7 +46,8 @@ public partial class Form1 : Form
         {
             cmbCategoryFilter.Items.Add(cat);
         }
-        cmbCategoryFilter.SelectedIndex = 0;
+        int filterIndex = selectedFilter == null ? 0 : cmbCategoryFilter.Items.IndexOf(selectedFilter);
+        cmbCategoryFilter.SelectedIndex = filterIndex >= 0 ? filterIndex : 0;
 
         // Not kategorisi seçici (Sağ)
         cmbNoteCategory.Items.Clear();
@@ -45,7 +55,16 @@ public partial class Form1 : Form
         {
             cmbNoteCategory.Items.Add(cat);
         }
-        if (cmbNoteCategory.Items.Count > 0) cmbNoteCategory.SelectedIndex = 0;
+        if (!string.IsNullOrWhiteSpace(noteCategory))
+        {
+            cmbNoteCategory.Text = noteCategory;
+        }
+        else if (cmbNoteCategory.Items.Count > 0)
+        {
+            cmbNoteCategory.SelectedIndex = 0;
+        }
+
+        _isBinding = wasBinding;
     }
 
     private void RefreshNotesList()

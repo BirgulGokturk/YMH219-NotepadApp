@@ -114,10 +114,13 @@ namespace YMH219_NotepadApp.Services
                                    .Distinct(StringComparer.OrdinalIgnoreCase)
                                    .ToList();
 
-            if (!categories.Contains("Genel")) categories.Insert(0, "Genel");
-            if (!categories.Contains("Ders")) categories.Add("Ders");
-            if (!categories.Contains("Kişisel")) categories.Add("Kişisel");
-            if (!categories.Contains("İş")) categories.Add("İş");
+            // Varsayılan kategoriler, büyük/küçük harf farkı gözetilmeden yoksa eklenir
+            // ("genel" adlı bir kategori varken ikinci bir "Genel" eklenmez)
+            var comparer = StringComparer.OrdinalIgnoreCase;
+            if (!categories.Contains("Genel", comparer)) categories.Insert(0, "Genel");
+            if (!categories.Contains("Ders", comparer)) categories.Add("Ders");
+            if (!categories.Contains("Kişisel", comparer)) categories.Add("Kişisel");
+            if (!categories.Contains("İş", comparer)) categories.Add("İş");
 
             return categories;
         }
