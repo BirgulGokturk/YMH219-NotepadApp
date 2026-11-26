@@ -291,10 +291,24 @@ public partial class Form1 : Form
         try
         {
             _noteManager.LoadFromJson();
+
+            // Yükleme yeni Note nesneleri oluşturur; eski nesneye yazılan değişiklikler
+            // dosyaya hiç ulaşmayacağı için editördeki eski not bağlantısı bırakılır
+            _currentNote = null;
+
             PopulateCategories();
             RefreshNotesList();
-            if (lstNotes.Items.Count > 0) lstNotes.SelectedIndex = 0;
+            if (lstNotes.Items.Count > 0)
+            {
+                lstNotes.SelectedIndex = 0;
+            }
+            else
+            {
+                CreateNewNote();
+            }
+
             lblStatus.Text = "🔄 Notlar dosyadan yeniden yüklendi.";
+            ShowLoadWarningIfAny();
         }
         catch (Exception ex)
         {
@@ -409,6 +423,23 @@ public partial class Form1 : Form
     }
 
     #endregion
+
+    protected override void OnShown(EventArgs e)
+    {
+        base.OnShown(e);
+        ShowLoadWarningIfAny();
+    }
+
+    /// <summary>
+    /// Not dosyası bozuk olduğu için örnek notlarla açıldıysa kullanıcıyı bilgilendirir.
+    /// </summary>
+    private void ShowLoadWarningIfAny()
+    {
+        if (!string.IsNullOrEmpty(_noteManager.LoadWarning))
+        {
+            MessageBox.Show(_noteManager.LoadWarning, "Not Dosyası Okunamadı", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+        }
+    }
 
     private void Form1_FormClosing(object? sender, FormClosingEventArgs e)
     {

@@ -17,6 +17,11 @@ namespace YMH219_NotepadApp.Services
         public bool AutoSave { get; set; } = true;
         public IReadOnlyList<Note> Notes => _notes.AsReadOnly();
 
+        /// <summary>
+        /// Son yüklemede kullanıcıya gösterilmesi gereken bir uyarı varsa (ör. bozuk not dosyası) metnini tutar.
+        /// </summary>
+        public string? LoadWarning { get; private set; }
+
         private static readonly JsonSerializerOptions _jsonOptions = new()
         {
             WriteIndented = true,
@@ -146,6 +151,8 @@ namespace YMH219_NotepadApp.Services
         /// </summary>
         public void LoadFromJson()
         {
+            LoadWarning = null;
+
             try
             {
                 if (!File.Exists(_storageFilePath))
@@ -170,9 +177,21 @@ namespace YMH219_NotepadApp.Services
             {
                 // Bozuk JSON durumu (Föy hata yönetimi kriteri): Yedekle ve temiz başlat
                 string backup = $"{_storageFilePath}.bak_{DateTime.Now:yyyyMMddHHmmss}";
-                try { File.Copy(_storageFilePath, backup, true); } catch { }
+                bool backedUp = false;
+                try
+                {
+                    File.Copy(_storageFilePath, backup, true);
+                    backedUp = true;
+                }
+                catch { }
+
                 _notes.Clear();
                 CreateDefaultWelcomeNotes();
+
+                // Kullanıcının notları sessizce örnek notlarla değişmesin; arayüz bu uyarıyı gösterir
+                LoadWarning = backedUp
+                    ? $"Not dosyası (notes.json) bozuk olduğu için okunamadı.\n\nEski dosya şu adla yedeklendi:\n{backup}\n\nUygulama örnek notlarla açıldı."
+                    : "Not dosyası (notes.json) bozuk olduğu için okunamadı ve yedeklenemedi.\n\nUygulama örnek notlarla açıldı.";
             }
             catch (Exception ex)
             {
