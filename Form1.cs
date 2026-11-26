@@ -86,9 +86,31 @@ public partial class Form1 : Form
         lblNoteCount.Text = $"Toplam Not: {filtered.Count} adet";
     }
 
+    /// <summary>
+    /// Listeyi yeniler ve düzenlenmekte olan notu, editörü yeniden yüklemeden seçili hale getirir.
+    /// (Editör yeniden yüklenirse yazı imleci başa atlardı.)
+    /// </summary>
+    private void RefreshNotesListKeepingSelection()
+    {
+        bool wasBinding = _isBinding;
+        _isBinding = true;
+
+        RefreshNotesList();
+        if (_currentNote != null)
+        {
+            int index = lstNotes.Items.IndexOf(_currentNote);
+            if (index >= 0) lstNotes.SelectedIndex = index;
+        }
+
+        _isBinding = wasBinding;
+    }
+
     private void LstNotes_SelectedIndexChanged(object? sender, EventArgs e)
     {
-        if (lstNotes.SelectedItem is Note selected)
+        // Liste program tarafından yenilenirken editör yeniden yüklenmez
+        if (_isBinding) return;
+
+        if (lstNotes.SelectedItem is Note selected && selected != _currentNote)
         {
             LoadNoteToEditor(selected);
         }
@@ -155,16 +177,18 @@ public partial class Form1 : Form
 
     private void SaveCurrentNote()
     {
-        string title = txtTitle.Text.Trim();
-        if (string.IsNullOrEmpty(title))
+        string title = GetEditorTitle();
+        if (string.IsNullOrWhiteSpace(txtTitle.Text))
         {
-            title = "Başlıksız Not";
+            // Başlık kutusuna yazılan "Başlıksız Not" otomatik kaydı tetiklemesin
+            _isBinding = true;
             txtTitle.Text = title;
+            _isBinding = false;
         }
 
         string content = rtbContent.Text;
         string? rtf = rtbContent.Rtf;
-        string category = string.IsNullOrWhiteSpace(cmbNoteCategory.Text) ? "Genel" : cmbNoteCategory.Text.Trim();
+        string category = GetEditorCategory();
 
         try
         {
@@ -182,17 +206,9 @@ public partial class Form1 : Form
             }
 
             PopulateCategories();
-            RefreshNotesList();
 
             // Kaydedilen notu listede seç
-            for (int i = 0; i < lstNotes.Items.Count; i++)
-            {
-                if (lstNotes.Items[i] is Note n && n.Id == _currentNote.Id)
-                {
-                    lstNotes.SelectedIndex = i;
-                    break;
-                }
-            }
+            RefreshNotesListKeepingSelection();
 
             lblStatus.Text = $"● Kaydedildi: {DateTime.Now:HH:mm:ss} (notes.json)";
             lblDateInfo.Text = $"Oluşturulma: {_currentNote.CreatedAt:dd.MM.yyyy HH:mm} | Son Güncelleme: {_currentNote.UpdatedAt:dd.MM.yyyy HH:mm}";
@@ -343,19 +359,45 @@ public partial class Form1 : Form
 
         UpdateWordCount();
 
-        // Otomatik kaydetme açık olduğunda içeriği anlık olarak modele yansıt
-        if (_currentNote != null && _noteManager.AutoSave)
+        if (!_noteManager.AutoSave) return;
+
+        try
         {
-            _currentNote.Title = string.IsNullOrWhiteSpace(txtTitle.Text) ? "Başlıksız Not" : txtTitle.Text.Trim();
-            _currentNote.Content = rtbContent.Text;
-            _currentNote.RtfContent = rtbContent.Rtf;
-            _currentNote.Category = cmbNoteCategory.Text.Trim();
-            _currentNote.UpdatedAt = DateTime.Now;
-            _noteManager.SaveToJson();
+            if (_currentNote == null)
+            {
+                // Yeni not: ilk karakter yazıldığında not oluşturulur. Önceden yeni notlar
+                // yalnızca "Kaydet" ile kaydediliyordu; başka nota geçince veya uygulama
+                // kapanınca yazılanlar kayboluyordu.
+                if (string.IsNullOrWhiteSpace(txtTitle.Text) && string.IsNullOrWhiteSpace(rtbContent.Text)) return;
+
+                var newNote = new Note(GetEditorTitle(), rtbContent.Text, GetEditorCategory(), rtbContent.Rtf);
+                _noteManager.AddNote(newNote);
+                _currentNote = newNote;
+                RefreshNotesListKeepingSelection();
+            }
+            else
+            {
+                // Başlık veya kategori değiştiyse listedeki görünen metin de güncellenir
+                bool listTextChanged = _currentNote.Title != GetEditorTitle() || _currentNote.Category != GetEditorCategory();
+                _noteManager.UpdateNote(_currentNote.Id, GetEditorTitle(), rtbContent.Text, GetEditorCategory(), rtbContent.Rtf);
+                if (listTextChanged) RefreshNotesListKeepingSelection();
+            }
 
             lblStatus.Text = $"● Otomatik Kaydedildi: {DateTime.Now:HH:mm:ss}";
+            lblDateInfo.Text = $"Oluşturulma: {_currentNote.CreatedAt:dd.MM.yyyy HH:mm} | Son Güncelleme: {_currentNote.UpdatedAt:dd.MM.yyyy HH:mm}";
+        }
+        catch (IOException ex)
+        {
+            // Dosya kilitliyse veya yazılamıyorsa uygulama kapanmaz; durum çubuğunda bildirilir
+            lblStatus.Text = $"⚠ Otomatik kayıt başarısız: {ex.Message}";
         }
     }
+
+    private string GetEditorTitle() =>
+        string.IsNullOrWhiteSpace(txtTitle.Text) ? "Başlıksız Not" : txtTitle.Text.Trim();
+
+    private string GetEditorCategory() =>
+        string.IsNullOrWhiteSpace(cmbNoteCategory.Text) ? "Genel" : cmbNoteCategory.Text.Trim();
 
     private void UpdateWordCount()
     {

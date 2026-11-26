@@ -274,6 +274,7 @@ partial class Form1
         cmbNoteCategory.Name = "cmbNoteCategory";
         cmbNoteCategory.Size = new Size(150, 24);
         cmbNoteCategory.TabIndex = 1;
+        cmbNoteCategory.TextChanged += EditorContentChanged;
 
         // toolStripFormat (Zengin Metin Araçları)
         toolStripFormat.BackColor = Color.FromArgb(248, 249, 250);
